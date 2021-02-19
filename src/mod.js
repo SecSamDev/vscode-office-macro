@@ -8,7 +8,7 @@ const { VbaProjectStream, VbaDirStream, VbaModule } = require('./office/office-p
 
 const { OleCompoundDoc } = require('./office/ole-doc')
 const cache = {};
-
+let macroLab = vscode.window.createOutputChannel("MacroLab");
 async function activate(context) {
     const fileSystemProvider = new MacroLabProvider();
     context.subscriptions.push(vscode.workspace.registerFileSystemProvider('doc', fileSystemProvider, { isCaseSensitive: true, isReadonly: true }));
@@ -27,7 +27,7 @@ async function activate(context) {
 module.exports.activate = activate
 
 async function tryPreviewDocument(document) {
-    console.log("Preview document: " + document.uri.toString())
+    macroLab.appendLine("Preview document: " + document.uri.toString())
     let name = path.basename(document.uri.path);
     let extension = path.extname(document.uri.path).substr(1).toLowerCase();
 
@@ -43,11 +43,16 @@ async function tryPreviewDocument(document) {
     if (extension.includes("ppt")) {
         extension = "ppt"
     }
+       //Create output channel
+       
+
+       //Write to output.
+       orange.appendLine("I am a banana.");
     let html = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Parsing ${name}` }, async () => {
         try {
-            console.log("Pre-reading: " + document.uri.path)
+            macroLab.appendLine("Pre-reading: " + document.uri.path)
             let doc_stream = fs.readFileSync(document.uri.path)
-            console.log("Reading OK")
+            macroLab.appendLine("Reading OK")
             let analyzer = await MultiFileAnalyzer.from_buffer(doc_stream)
             await analyzer.analyze()
             cache[document.uri.toString()] = analyzer.analyzer;
@@ -55,7 +60,7 @@ async function tryPreviewDocument(document) {
             return Buffer.from(toRet)
 
         } catch (e) {
-            console.log(e)
+            macroLab.appendLine(e)
             vscode.window.showInformationMessage(`Failed to parse ${name}!`);
             return Buffer.from("No valid Office document").toString("utf-8")
         }
@@ -63,7 +68,7 @@ async function tryPreviewDocument(document) {
     });
 
     const documentUri = vscode.Uri.parse(`${extension}:/?${document.uri}`);
-    console.log(documentUri.toString())
+    macroLab.appendLine(documentUri.toString())
     if (vscode.workspace.getWorkspaceFolder(documentUri) === undefined) {
         vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length || 0, 0, { uri: documentUri, name });
     }
@@ -132,7 +137,7 @@ class MacroLabProvider {
             return Buffer.from(toRet)
 
         } catch (e) {
-            console.log(e)
+            macroLab.appendLine(e)
             vscode.window.showInformationMessage(`Failed to parse ${name}!`);
             return Buffer.from("No valid Office document").toString("utf-8")
         }
