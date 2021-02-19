@@ -43,11 +43,6 @@ async function tryPreviewDocument(document) {
     if (extension.includes("ppt")) {
         extension = "ppt"
     }
-       //Create output channel
-       
-
-       //Write to output.
-       orange.appendLine("I am a banana.");
     let html = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Parsing ${name}` }, async () => {
         try {
             macroLab.appendLine("Pre-reading: " + document.uri.path)
@@ -91,6 +86,7 @@ class MacroLabProvider {
         return new vscode.Disposable(() => { });
     }
     stat(uri) {
+        macroLab.appendLine("stats: " + uri)
         const fileUri = vscode.Uri.parse(uri.query);
         const office = cache[fileUri.toString()];
         const name = path.basename(fileUri.path);
@@ -128,6 +124,7 @@ class MacroLabProvider {
     }
 
     async load_cache(uri){
+        macroLab.appendLine("load cache: " + uri)
         try {
             let doc_stream = fs.readFileSync(uri.path)
             let analyzer = await MultiFileAnalyzer.from_buffer(doc_stream)
@@ -149,6 +146,7 @@ class MacroLabProvider {
         throw new Error(error);
     }
     async readFile(uri) {
+        macroLab.appendLine("read file: " + uri)
         const officeUri = vscode.Uri.parse(uri.query);
         let office = cache[officeUri.toString()];
         const name = path.basename(officeUri.path);
@@ -212,6 +210,7 @@ class MacroLabProvider {
     }
 
     readDirectory(uri) {
+        macroLab.appendLine("readDirectory: " + uri)
         let toAdd = []
         const officeUri = vscode.Uri.parse(uri.query);
         const office = cache[officeUri.toString()];

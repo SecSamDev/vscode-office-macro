@@ -573,9 +573,6 @@ function RGCE_to_javasript(ptg_list = []) {
         }
     }
     if (ptg_i[0].cls == TOKEN_CLASS_FUNCTION) {
-        if(ptg_i[0].value == "User Defined Function"){
-            console.log("1")
-        }
         let params = []
         let offst = 1;
         for (let i_param = 0; i_param < ptg_i[0].n_params[1]; i_param++) {

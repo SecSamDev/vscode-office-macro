@@ -692,7 +692,6 @@ class Vba_VBAProjectStream {
             size_name = prf_c.readUInt16LE(offset);
             let name2 = prf_c.slice(offset + 2,offset + 2 + size_name).toString('utf16le');
             offset += 23 + size_name
-            console.log(mod_name)
             this.modules.push({
                 name: mod_name,
                 name2,

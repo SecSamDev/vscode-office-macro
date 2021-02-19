@@ -72,19 +72,7 @@ let context = new Proxy({},{
             excel_jscript += `//----------------- ${sheet.name} -----------------\n`
             for(let i_cell =0; i_cell < sheet.cells.length; i_cell++){
                 let cell = sheet.cells[i_cell]
-                if(typeof (cell.js_v || cell.value) === 'object'){
-                    console.log("azsada")
-                }
                 excel_jscript += `CELL_LIST_OBJ.cell_${sheet.name}_${cell.rw}_${cell.col} = function(){return ${cell.js_v || cell.value}}\n`
-                if(cell.rw == "1236" && cell.col == "118"){
-                    console.log(cell)
-                }
-                if(cell.rw == "531" && cell.col == "228"){
-                    console.log(cell)
-                }
-                if(cell.rw == "532" && cell.col == "228"){
-                    console.log(cell)
-                }
             }
             for(let i_label =0; i_label < sheet.labels.length; i_label++){
                 let lbl = sheet.labels[i_label]
@@ -149,18 +137,7 @@ let context = new Proxy({},{
     }
 }
 
-/**
- * 
- * @param {[{type:number,value:any}]} rgce The Rgce structure specifies a set of Ptgs, laid out sequentially in the file
- * @param {Buffer} rgcb 
- */
-function RGC_toString(rgce, rgcb = Buffer.from([])) {
-    let result = ""
-    for (let entry of rgce) {
-        console.log("RGC " + TOKEN_EXCEL[entry.type])
-    }
-    return result
-}
+
 
 
 const C_TAB_MAP = {
