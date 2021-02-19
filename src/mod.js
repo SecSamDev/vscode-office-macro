@@ -27,7 +27,7 @@ async function activate(context) {
 module.exports.activate = activate
 
 async function tryPreviewDocument(document) {
-
+    console.log("Preview document: " + document.uri.toString())
     let name = path.basename(document.uri.path);
     let extension = path.extname(document.uri.path).substr(1).toLowerCase();
 
@@ -45,7 +45,9 @@ async function tryPreviewDocument(document) {
     }
     let html = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Parsing ${name}` }, async () => {
         try {
+            console.log("Pre-reading: " + document.uri.path)
             let doc_stream = fs.readFileSync(document.uri.path)
+            console.log("Reading OK")
             let analyzer = await MultiFileAnalyzer.from_buffer(doc_stream)
             await analyzer.analyze()
             cache[document.uri.toString()] = analyzer.analyzer;
@@ -61,7 +63,6 @@ async function tryPreviewDocument(document) {
     });
 
     const documentUri = vscode.Uri.parse(`${extension}:/?${document.uri}`);
-    console.log(documentUri)
     console.log(documentUri.toString())
     if (vscode.workspace.getWorkspaceFolder(documentUri) === undefined) {
         vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length || 0, 0, { uri: documentUri, name });
