@@ -98,6 +98,7 @@ class MacroLabProvider {
 
         const { ctime, mtime } = office;
 
+        //TODO: define a good system to duplicate files (processed and binary)
         if (uri.path === '/') {
             return { type: vscode.FileType.Directory, ctime, mtime, size: 0 };
         }
@@ -118,6 +119,9 @@ class MacroLabProvider {
         }
         if (uri.path.endsWith('.bin')) {
             return { type: vscode.FileType.Directory, ctime, mtime, size: 0 };
+        }
+        if (uri.path == "/Book") {
+            return { type: vscode.FileType.File, ctime, mtime, size: 0 };
         }
         return { type: vscode.FileType.Directory, ctime, mtime, size: 0 };
 
