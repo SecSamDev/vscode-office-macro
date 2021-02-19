@@ -105,7 +105,7 @@ class MacroLabProvider {
         if (uri.path.startsWith("/Macros/VBA/") || uri.path.startsWith("/")) {
             return { type: vscode.FileType.File, ctime, mtime, size: 0 };
         }
-        if (uri.path.includes('/contents') || uri.path.includes('OCXNAME') || uri.path.includes('__SRP_') || uri.path.endsWith('VBFrame') || uri.path.endsWith('CompObj') || uri.path.endsWith('/f')  || uri.path.endsWith('/_VBA_PROJECT') || uri.path.endsWith('/dir')) {
+        if (uri.path.includes('/contents') || uri.path.includes('OCXNAME') || uri.path.includes('__SRP_') || uri.path.endsWith('VBFrame') || uri.path.endsWith('CompObj') || uri.path.endsWith('/f')  || uri.path.endsWith('/_VBA_PROJECT') || uri.path.endsWith('/dir')  || uri.path.endsWith('/Workbook')) {
             return { type: vscode.FileType.File, ctime, mtime, size: 0 };
         }
         if (uri.path.endsWith('.bin')) {
