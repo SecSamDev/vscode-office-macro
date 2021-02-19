@@ -2,7 +2,7 @@
 	"name": "macro-lab",
 	"displayName": "Office Macro Laboratory",
 	"description": "A simple laboratory to analyze Office Macros",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"engines": {
 		"vscode": "^1.53.0"
 	},
@@ -21,8 +21,24 @@
 		"workspaceContains:**/*.docm",
         "onFileSystem:doc",
         "onFileSystem:docx",
-        "onFileSystem:docm"
+        "onFileSystem:docm",
+		"onCommand:macrolab.openOfficeDocument"
     ],
+	"contributes": {
+		"commands": [{
+			"command": "macrolab.openOfficeDocument",
+			"title": "Analyze Office Document",
+			"category": "Macro Lab"
+		}],
+		"menus": {
+			"explorer/context": [
+				{
+					"command": "macrolab.openOfficeDocument",
+					"group": "navigation"
+				}
+			]
+		}
+	},
 	"main": "./src/mod.js",
 	"scripts": {
 		"lint": "eslint .",

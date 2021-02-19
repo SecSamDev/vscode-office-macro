@@ -14,15 +14,20 @@ async function activate(context) {
     context.subscriptions.push(vscode.workspace.registerFileSystemProvider('doc', fileSystemProvider, { isCaseSensitive: true, isReadonly: true }));
     context.subscriptions.push(vscode.workspace.registerFileSystemProvider('xls', fileSystemProvider, { isCaseSensitive: true, isReadonly: true }));
     context.subscriptions.push(vscode.workspace.registerFileSystemProvider('ppt', fileSystemProvider, { isCaseSensitive: true, isReadonly: true }));
+    /*
     context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(document => tryPreviewDocument(document)));
     if (vscode.window.activeTextEditor !== undefined) {
         await tryPreviewDocument(vscode.window.activeTextEditor.document);
-    }
+    }*/
+    context.subscriptions.push(vscode.commands.registerCommand('macrolab.openOfficeDocument', async (resource) => {
+        await tryPreviewDocument({ uri: resource })
+    }));
 }
 
 module.exports.activate = activate
 
 async function tryPreviewDocument(document) {
+
     let name = path.basename(document.uri.path);
     let extension = path.extname(document.uri.path).substr(1).toLowerCase();
 
@@ -44,8 +49,8 @@ async function tryPreviewDocument(document) {
             let analyzer = await MultiFileAnalyzer.from_buffer(doc_stream)
             await analyzer.analyze()
             cache[document.uri.toString()] = analyzer.analyzer;
-            let toRet = analyzer.analyzer.report.static.macros.reduce((pv, val) => { pv += "//" + val.name + "\n" + val.code; return pv }, "");
-            return toRet
+            let toRet = analyzer.analyzer.report.static.macros.reduce((pv, val) => { pv += "'" + val.name + "\n" + val.code; return pv }, "");
+            return Buffer.from(toRet)
 
         } catch (e) {
             console.log(e)
@@ -56,6 +61,7 @@ async function tryPreviewDocument(document) {
     });
 
     const documentUri = vscode.Uri.parse(`${extension}:/?${document.uri}`);
+    console.log(documentUri)
     console.log(documentUri.toString())
     if (vscode.workspace.getWorkspaceFolder(documentUri) === undefined) {
         vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length || 0, 0, { uri: documentUri, name });
@@ -99,13 +105,13 @@ class MacroLabProvider {
             }
             return { type: vscode.FileType.File, ctime, mtime, size: 0 };
         }
-        if (uri.path == "/1Table" || uri.path== "/Data" || uri.path== "/Macros/PROJECT" || uri.path== "/WordDocument") {
+        if (uri.path == "/1Table" || uri.path == "/Data" || uri.path.includes("/PROJECT") || uri.path == "/WordDocument") {
             return { type: vscode.FileType.File, ctime, mtime, size: 0 };
         }
         if (uri.path.startsWith("/Macros/VBA/") || uri.path.startsWith("/")) {
             return { type: vscode.FileType.File, ctime, mtime, size: 0 };
         }
-        if (uri.path.includes('/contents') || uri.path.includes('OCXNAME') || uri.path.includes('__SRP_') || uri.path.endsWith('VBFrame') || uri.path.endsWith('CompObj') || uri.path.endsWith('/f')  || uri.path.endsWith('/_VBA_PROJECT') || uri.path.endsWith('/dir')  || uri.path.endsWith('/Workbook')) {
+        if (uri.path.includes('/contents') || uri.path.includes('OCXNAME') || uri.path.includes('ObjInfo') || uri.path.includes('PRINT') || uri.path.includes('__SRP_') || uri.path.endsWith('VBFrame') || uri.path.endsWith('CompObj') || uri.path.endsWith('/f') || uri.path.endsWith('/o') || uri.path.includes('/_VBA_PROJECT') || uri.path.endsWith('/dir') || uri.path.endsWith('/Workbook')) {
             return { type: vscode.FileType.File, ctime, mtime, size: 0 };
         }
         if (uri.path.endsWith('.bin')) {
@@ -114,6 +120,23 @@ class MacroLabProvider {
         return { type: vscode.FileType.Directory, ctime, mtime, size: 0 };
 
     }
+
+    async load_cache(uri){
+        try {
+            let doc_stream = fs.readFileSync(uri.path)
+            let analyzer = await MultiFileAnalyzer.from_buffer(doc_stream)
+            await analyzer.analyze()
+            cache[uri.toString()] = analyzer.analyzer;
+            let toRet = analyzer.analyzer.report.static.macros.reduce((pv, val) => { pv += "'" + val.name + "\n" + val.code; return pv }, "");
+            return Buffer.from(toRet)
+
+        } catch (e) {
+            console.log(e)
+            vscode.window.showInformationMessage(`Failed to parse ${name}!`);
+            return Buffer.from("No valid Office document").toString("utf-8")
+        }
+    }
+
     createDirectory(_uri) {
         const error = 'createDirectory should not be called';
         vscode.window.showErrorMessage(error);
@@ -121,11 +144,13 @@ class MacroLabProvider {
     }
     async readFile(uri) {
         const officeUri = vscode.Uri.parse(uri.query);
-        const office = cache[officeUri.toString()];
+        let office = cache[officeUri.toString()];
         const name = path.basename(officeUri.path);
         if (!office) {
             const error = `${name} was not found in cache! ${Object.keys(cache)}`;
             vscode.window.showErrorMessage(error);
+            this.load_cache(officeUri)
+            office = cache[officeUri.toString()];
             throw new Error(error);
         }
         if (uri.path === '/Macros/VBA/dir.json') {
@@ -144,7 +169,7 @@ class MacroLabProvider {
             return Buffer.from("")
         }
         if (uri.path === '/Workbook') {
-            if (office.workbook) {
+            if (office.workbook) { 
                 return Buffer.from(JSON.stringify(office.workbook, null, "\t"))
             }
         }
@@ -156,7 +181,7 @@ class MacroLabProvider {
         if (uri.path.includes(".bin")) {
             if (uri.path.includes(".bin/")) {
                 return Buffer.from(office.workbookjs)
-            }else{
+            } else {
 
             }
         }
@@ -207,7 +232,7 @@ class MacroLabProvider {
         let toRet = office.doc.ls_dir2(pth)
         let storage = toRet.storage.map(val => [val.toString(), vscode.FileType.Directory])
         let streams = toRet.streams.map(val => [val.toString(), vscode.FileType.File])
-        
+
         for (let i = 0; i < streams.length; i++) {
             if (streams[i][0] == "Workbook") {
                 toAdd.push(["Workbook.js", vscode.FileType.File])
@@ -216,7 +241,7 @@ class MacroLabProvider {
         if (uri.path === '/Macros/VBA') {
             toAdd = [["dir.json", vscode.FileType.File], ...office.report.static.macros.map(val => [[val.name + ".vba", vscode.FileType.File], [val.name + ".pcode", vscode.FileType.File]]).reduce((pv, val) => { pv.push(val[0]); pv.push(val[1]); return pv }, [])]
         }
-        return [...storage, ...streams,...toAdd]
+        return [...storage, ...streams, ...toAdd]
 
     }
 
