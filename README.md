@@ -2,3 +2,4 @@
 
 Easy to use tool to analyze Malicious Macros in Visual Studio Code
 
+![How To Use](./doc/HowToUse.gif)
