@@ -28,8 +28,8 @@ module.exports.activate = activate
 
 async function tryPreviewDocument(document) {
     macroLab.appendLine("Preview document: " + document.uri.toString())
-    let name = path.basename(document.uri.path);
-    let extension = path.extname(document.uri.path).substr(1).toLowerCase();
+    let name = path.basename(document.uri.fsPath);
+    let extension = path.extname(document.uri.fsPath).substr(1).toLowerCase();
 
     if (!extension.includes("doc") && !extension.includes("xls") && !extension.includes("ppt")) {
         return
@@ -45,8 +45,8 @@ async function tryPreviewDocument(document) {
     }
     let html = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Parsing ${name}` }, async () => {
         try {
-            macroLab.appendLine("Pre-reading: " + document.uri.path)
-            let doc_stream = fs.readFileSync(document.uri.path)
+            macroLab.appendLine("Pre-reading: " + document.uri.fsPath)
+            let doc_stream = fs.readFileSync(document.uri.fsPath)
             macroLab.appendLine("Reading OK")
             let analyzer = await MultiFileAnalyzer.from_buffer(doc_stream)
             await analyzer.analyze()
