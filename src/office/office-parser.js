@@ -733,7 +733,7 @@ class VbaProjectStream {
     }
     static from_buffer(data){
         if (data instanceof Buffer) {
-            data = data.toString()
+            data = data.toString('utf-16le')
         }
         if (typeof data != 'string') {
             throw new Error("VbaProjectStream needs a string")
@@ -899,6 +899,9 @@ class ObjectPool {
             console.error("Could parse content ID: " + id)
             this.content = ""
         }
+    }
+    toJSON(){
+        return JSON.stringify({name : this.name, content: this.content},null,"\t")
     }
 }
 /**

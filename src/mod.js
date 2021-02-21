@@ -2,11 +2,8 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path')
 const { MultiFileAnalyzer } = require('./analyzer')
-const { OfficeFileFS } = require('./office/office-fs')
-const { OfficeAnalysisResults } = require('./office/office-results')
-const { VbaProjectStream, VbaDirStream, VbaModule } = require('./office/office-parser')
-
-const { OleCompoundDoc } = require('./office/ole-doc')
+const { VSCodeOfficeFS } = require("./office/vsfs")
+const {OfficeFileFS} = require('./office/office-fs')
 const cache = {};
 let macroLab = vscode.window.createOutputChannel("MacroLab");
 async function activate(context) {
@@ -48,11 +45,18 @@ async function tryPreviewDocument(document) {
             macroLab.appendLine("Pre-reading: " + document.uri.fsPath)
             let doc_stream = fs.readFileSync(document.uri.fsPath)
             macroLab.appendLine("Reading OK")
-            let analyzer = await MultiFileAnalyzer.from_buffer(doc_stream)
-            await analyzer.analyze()
-            cache[document.uri.toString()] = analyzer.analyzer;
-            let toRet = analyzer.analyzer.report.static.macros.reduce((pv, val) => { pv += "'" + val.name + "\n" + val.code; return pv }, "");
-            return Buffer.from(toRet)
+            //let analyzer = await MultiFileAnalyzer.from_buffer(doc_stream)
+            //await analyzer.analyze()
+            //cache[document.uri.toString()] = analyzer.analyzer;
+            //let toRet = analyzer.analyzer.report.static.macros.reduce((pv, val) => { pv += "'" + val.name + "\n" + val.code; return pv }, "");
+            //return Buffer.from(toRet)
+            let office_fs = await OfficeFileFS.from_buffer(doc_stream);
+            let vs_fs = new VSCodeOfficeFS(office_fs);
+            //  Update content in "/"
+            await vs_fs.readDirectory("/")
+            cache[document.uri.toString()] = vs_fs
+            return Buffer.from("Analisis of file in process...")
+
 
         } catch (e) {
             macroLab.appendLine(e)
@@ -63,7 +67,7 @@ async function tryPreviewDocument(document) {
     });
 
     const documentUri = vscode.Uri.parse(`${extension}:/?${document.uri}`);
-    macroLab.appendLine(documentUri.toString())
+    macroLab.appendLine("Opened: " + documentUri.toString())
     if (vscode.workspace.getWorkspaceFolder(documentUri) === undefined) {
         vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length || 0, 0, { uri: documentUri, name });
     }
@@ -96,7 +100,10 @@ class MacroLabProvider {
             throw new Error(error);
         }
 
-        const { ctime, mtime } = office;
+        const ctime = 0;
+        const mtime = 0;
+        return office.stat(uri.path)
+        /*
 
         //TODO: define a good system to duplicate files (processed and binary)
         if (uri.path === '/') {
@@ -124,22 +131,29 @@ class MacroLabProvider {
             return { type: vscode.FileType.File, ctime, mtime, size: 0 };
         }
         return { type: vscode.FileType.Directory, ctime, mtime, size: 0 };
-
+        //*/
     }
 
-    async load_cache(uri){
+    async load_cache(uri) {
         macroLab.appendLine("load cache: " + uri)
         try {
             let doc_stream = fs.readFileSync(uri.path)
+            /*
             let analyzer = await MultiFileAnalyzer.from_buffer(doc_stream)
             await analyzer.analyze()
             cache[uri.toString()] = analyzer.analyzer;
             let toRet = analyzer.analyzer.report.static.macros.reduce((pv, val) => { pv += "'" + val.name + "\n" + val.code; return pv }, "");
-            return Buffer.from(toRet)
+            return Buffer.from(toRet)*/
+            let office_fs = await OfficeFileFS.from_buffer(doc_stream);
+            let vs_fs = new VSCodeOfficeFS(office_fs);
+            //  Update content in "/"
+            await vs_fs.readDirectory("/")
+            cache[uri.toString()] = vs_fs
+            return Buffer.from("Analisis of file in process...")
 
         } catch (e) {
             macroLab.appendLine(e)
-            vscode.window.showInformationMessage(`Failed to parse ${name}!`);
+            vscode.window.showInformationMessage(`Failed to parse ${path.basename(uri.path)}!`);
             return Buffer.from("No valid Office document").toString("utf-8")
         }
     }
@@ -161,6 +175,8 @@ class MacroLabProvider {
             office = cache[officeUri.toString()];
             throw new Error(error);
         }
+        return await office.readFile(uri.path)
+        /*
         if (uri.path === '/Macros/VBA/dir.json') {
             return Buffer.from(JSON.stringify(office.project_file, null, "\t"))
         }
@@ -177,7 +193,7 @@ class MacroLabProvider {
             return Buffer.from("")
         }
         if (uri.path === '/Workbook') {
-            if (office.workbook) { 
+            if (office.workbook) {
                 return Buffer.from(JSON.stringify(office.workbook, null, "\t"))
             }
         }
@@ -211,9 +227,10 @@ class MacroLabProvider {
         }
         let content = await office.doc.read_file(uri.path)
         return Buffer.from(content ? content : "")
+        //*/
     }
 
-    readDirectory(uri) {
+    async readDirectory(uri) {
         macroLab.appendLine("readDirectory: " + uri)
         let toAdd = []
         const officeUri = vscode.Uri.parse(uri.query);
@@ -223,21 +240,11 @@ class MacroLabProvider {
             vscode.window.showErrorMessage(error);
             throw new Error(error);
         }
+        return await office.readDirectory(uri.path)
+        /*
         let pth = uri.path.startsWith("/") ? uri.path.slice(1) : uri.path
         /*
-        if (uri.path === '/' && office.report.static.macros.length > 0) {
-            return [["Macros", vscode.FileType.Directory]]
-        }
-        if (uri.path === '/Macros') {
-            return [["VBA", vscode.FileType.Directory]]
-        }
-        if (uri.path === '/Macros/VBA') {
-            return [["dir.json", vscode.FileType.File], ...office.report.static.macros.map(val => [[val.name + ".vba", vscode.FileType.File], [val.name + ".pcode", vscode.FileType.File]]).reduce((pv, val) => { pv.push(val[0]); pv.push(val[1]); return pv }, [])]
-        }
-        if (uri.path.includes(".bin")) {
-            //TODO:
-            return [...office.report.static.macros.map(val => [[val.name + ".vba", vscode.FileType.File], [val.name + ".pcode", vscode.FileType.File]]).reduce((pv, val) => { pv.push(val[0]); pv.push(val[1]); return pv }, [])]
-        }*/
+
         let toRet = office.doc.ls_dir2(pth)
         let storage = toRet.storage.map(val => [val.toString(), vscode.FileType.Directory])
         let streams = toRet.streams.map(val => [val.toString(), vscode.FileType.File])
@@ -251,7 +258,7 @@ class MacroLabProvider {
             toAdd = [["dir.json", vscode.FileType.File], ...office.report.static.macros.map(val => [[val.name + ".vba", vscode.FileType.File], [val.name + ".pcode", vscode.FileType.File]]).reduce((pv, val) => { pv.push(val[0]); pv.push(val[1]); return pv }, [])]
         }
         return [...storage, ...streams, ...toAdd]
-
+        */
     }
 
     writeFile(_uri, _content, _options) {
