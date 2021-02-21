@@ -199,6 +199,8 @@ function isSummaryInformation(uri = "") {
 function isBiffDocument(uri = "") {
     if (uri == "Workbook") {
         return true
+    }else if (uri == "Book") {
+        return true
     }
     return false
 }

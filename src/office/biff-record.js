@@ -58,11 +58,23 @@ const RECORD_CONSTRUCTOR = {
     0x17: (data, context) => {
         //https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-xls/475df8d4-a3be-47a5-9a01-4ec828059f43
         let n_entries = data.readUInt16LE()
-        for (let i = 0; i < n_entries; i++) {
-            //Overcomplicated
-            //https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-xls/5adbad90-093d-4bc6-acc1-b662270bc0d7
-            context.external_sheets.push({})
-        }
+        let array = data.slice(2)
+        try {
+            for (let i = 0; i < n_entries; i++) {
+                //Overcomplicated
+                //https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-xls/5adbad90-093d-4bc6-acc1-b662270bc0d7
+                //XTI: [iSupBook,itabFirst, itabLast]
+                let iSupBook = array.readUInt16LE(i * 6)
+                let itabFirst = array.readUInt16LE((i * 6) + 2)
+                let itabLast = array.readUInt16LE((i * 6) + 4)
+                context.external_sheets.push({
+                    iSupBook,
+                    itabFirst,
+                    itabLast
+                })
+            }
+        } catch (err) { }
+
         return context
     },//EXTERNSHEET : External Reference,
     0x18: (data, context) => {
@@ -415,9 +427,9 @@ const RECORD_CONSTRUCTOR = {
         if (fInt == 0) {
             // LE >> 2 
             let num_buff = Buffer.alloc(8)
-            num_buff.writeBigUInt64LE( BigInt(number) << BigInt(34))
-            number =  ieee754.fromIEEE754Double(num_buff.reverse())
-            
+            num_buff.writeBigUInt64LE(BigInt(number) << BigInt(34))
+            number = ieee754.fromIEEE754Double(num_buff.reverse())
+
             if (fx100) {
                 number = number / 100
             }
@@ -428,7 +440,7 @@ const RECORD_CONSTRUCTOR = {
             }
         }
 
-        
+
         context.add_cell({
             rw,
             col,

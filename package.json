@@ -2,7 +2,7 @@
 	"name": "macro-lab",
 	"displayName": "Office Macro Laboratory",
 	"description": "A simple laboratory to analyze Office Macros",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"engines": {
 		"vscode": "^1.53.0"
 	},
