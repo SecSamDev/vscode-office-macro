@@ -2,7 +2,7 @@
 	"name": "macro-lab",
 	"displayName": "Office Macro Laboratory",
 	"description": "A simple laboratory to analyze Office Macros",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"engines": {
 		"vscode": "^1.53.0"
 	},
@@ -48,6 +48,7 @@
 	"dependencies": {
 		"unzipper": "^0.10.11"
 	},
+	"icon": "./icon.png",
 	"devDependencies": {
 		"@types/vscode": "^1.53.0",
 		"@types/glob": "^7.1.3",
