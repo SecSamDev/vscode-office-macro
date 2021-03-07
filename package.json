@@ -2,9 +2,9 @@
 	"name": "macro-lab",
 	"displayName": "Office Macro Laboratory",
 	"description": "A simple laboratory to analyze Office Macros",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"engines": {
-		"vscode": "^1.53.0"
+		"vscode": "^1.54.0"
 	},
 	"author": {
         "name": "Samuel Garces"

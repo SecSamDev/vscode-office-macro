@@ -96,9 +96,9 @@ class VSCodeOfficeFS {
 
             let filePath = uri== "" ? pth :  uri + "/" + pth
             this.tree_structure[filePath] = { type: vscode.FileType.File, ctime:0, mtime:0, size: 0 }
-            if (pth.endsWith(".bin")) {
+            if (filePath.endsWith(".bin")) {
                 paths.push([filePath + "$", vscode.FileType.Directory])
-                this.processBinaryFile(filePath)
+                await this.processBinaryFile(filePath)
                 this.tree_structure[filePath + "$"] = { type: vscode.FileType.Directory, ctime:0, mtime:0, size: 0 }
             } else if (isVbaDirStream(filePath)) {
                 paths.push([filePath + ".json", vscode.FileType.Directory])
