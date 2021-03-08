@@ -4,8 +4,6 @@ const path = require('path')
 const { VSCodeOfficeFS } = require("./office/vsfs")
 const {OfficeFileFS} = require('./office/office-fs')
 const cache = {};
-let macroLab = vscode.window.createOutputChannel("MacroLab");
-
 class OfficeProvider {
     constructor(...args) {
         this.emitter = new vscode.EventEmitter();
@@ -17,7 +15,9 @@ class OfficeProvider {
         return new vscode.Disposable(() => { });
     }
     stat(uri) {
-        macroLab.appendLine("stats: " + uri)
+        if(uri.path.includes(".vscode")){
+            return null
+        }
         const fileUri = vscode.Uri.parse(uri.query);
         const office = cache[fileUri.toString()];
         const name = path.basename(fileUri.path);
@@ -30,7 +30,6 @@ class OfficeProvider {
     }
 
     async load_cache(uri) {
-        macroLab.appendLine("load cache: " + uri)
         try {
             let doc_stream = fs.readFileSync(uri.path)
             if(doc_stream.indexOf("{\\rtf") < 3) {
@@ -45,7 +44,6 @@ class OfficeProvider {
             return Buffer.from("Analisis of file in process...")
 
         } catch (e) {
-            macroLab.appendLine(e)
             vscode.window.showInformationMessage(`Failed to parse ${path.basename(uri.path)}!`);
             return Buffer.from("No valid Office document").toString("utf-8")
         }
@@ -57,7 +55,9 @@ class OfficeProvider {
         throw new Error(error);
     }
     async readFile(uri) {
-        macroLab.appendLine("read file: " + uri)
+        if(uri.path.includes(".vscode")){
+            return null
+        }
         const officeUri = vscode.Uri.parse(uri.query);
         let office = cache[officeUri.toString()];
         const name = path.basename(officeUri.path);
@@ -74,7 +74,6 @@ class OfficeProvider {
     }
 
     async readDirectory(uri) {
-        macroLab.appendLine("readDirectory: " + uri)
         let toAdd = []
         const officeUri = vscode.Uri.parse(uri.query);
         const office = cache[officeUri.toString()];
@@ -110,7 +109,6 @@ class OfficeProvider {
 
 
 async function tryPreviewOfficeDocument(document) {
-    macroLab.appendLine("Preview document: " + document.uri.toString())
     let name = path.basename(document.uri.fsPath);
     let extension = path.extname(document.uri.fsPath).substr(1).toLowerCase();
 
@@ -128,9 +126,7 @@ async function tryPreviewOfficeDocument(document) {
     }
     let html = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Parsing ${name}` }, async () => {
         try {
-            macroLab.appendLine("Pre-reading: " + document.uri.fsPath)
             let doc_stream = fs.readFileSync(document.uri.fsPath)
-            macroLab.appendLine("Reading OK")
             let office_fs = await OfficeFileFS.from_buffer(doc_stream);
             let vs_fs = new VSCodeOfficeFS(office_fs);
             //  Update content in "/"
@@ -140,7 +136,6 @@ async function tryPreviewOfficeDocument(document) {
 
 
         } catch (e) {
-            macroLab.appendLine(e)
             vscode.window.showInformationMessage(`Failed to parse ${name}!`);
             return Buffer.from("No valid Office document").toString("utf-8")
         }
@@ -148,7 +143,6 @@ async function tryPreviewOfficeDocument(document) {
     });
 
     const documentUri = vscode.Uri.parse(`${extension}:/?${document.uri}`);
-    macroLab.appendLine("Opened: " + documentUri.toString())
     if (vscode.workspace.getWorkspaceFolder(documentUri) === undefined) {
         vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length || 0, 0, { uri: documentUri, name });
     }

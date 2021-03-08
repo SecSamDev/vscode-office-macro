@@ -2,13 +2,13 @@
 	"name": "macro-lab",
 	"displayName": "Office Macro Laboratory",
 	"description": "A simple laboratory to analyze Office Macros",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"engines": {
 		"vscode": "^1.54.0"
 	},
 	"author": {
-        "name": "Samuel Garces"
-    },
+		"name": "Samuel Garces"
+	},
 	"publisher": "secsamdev",
 	"categories": [
 		"Visualization",
@@ -16,25 +16,33 @@
 		"Programming Languages"
 	],
 	"activationEvents": [
-        "workspaceContains:**/*.doc",
-        "workspaceContains:**/*.docx",
-		"workspaceContains:**/*.docm",
-        "onFileSystem:doc",
-        "onFileSystem:docx",
-        "onFileSystem:docm",
-		"onCommand:macrolab.openOfficeDocument"
-    ],
+		"onCommand:macrolab.openOfficeDocument",
+		"onCommand:macrolab.openPdfDocument"
+	],
 	"contributes": {
-		"commands": [{
-			"command": "macrolab.openOfficeDocument",
-			"title": "Analyze Office Document",
-			"category": "Macro Lab"
-		}],
+		"commands": [
+			{
+				"command": "macrolab.openOfficeDocument",
+				"title": "Analyze Office Document",
+				"category": "MacroLab"
+			},
+			{
+				"command": "macrolab.openPdfDocument",
+				"title": "Analyze PDF Document",
+				"category": "MacroLab"
+			}
+		],
 		"menus": {
 			"explorer/context": [
 				{
+					"when": "resourceExtname == .doc || resourceExtname == .docx || resourceExtname == .docm || resourceExtname == .xls || resourceExtname == .xlsx || resourceExtname == .xlsm || resourceExtname == .pptx || resourceExtname == .ppt || resourceExtname == .pptm",
 					"command": "macrolab.openOfficeDocument",
-					"group": "navigation"
+					"group": "MacroLab"
+				},
+				{
+					"when": "resourceExtname == .pdf",
+					"command": "macrolab.openPdfDocument",
+					"group": "MacroLab"
 				}
 			]
 		}
@@ -61,7 +69,7 @@
 		"vscode-test": "^1.5.0"
 	},
 	"repository": {
-        "type": "git",
-        "url": "https://github.com/SecSamDev/vscode-office-macro.git"
-    }
+		"type": "git",
+		"url": "https://github.com/SecSamDev/vscode-office-macro.git"
+	}
 }
